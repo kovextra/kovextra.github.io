@@ -40,6 +40,9 @@ let hasPlaylist = false;
 let hasBio = false;
 const morningMessage = 'Hello Friend!';
 const nightMessage = 'Tryna Leave?..';
+let snoreIntervalId = 0;
+let snoreCount = 0;
+let snoreLimit = 5;
 
 setTimeout(()=> {$("h3").hide("slow"); $("img").hide("slow");
     }, 1000);
@@ -67,10 +70,21 @@ const toggleNightMode = function(night) {
   if (night) {
     $("body").css("background-color", "darkblue");
     $("#header").css("color", "white");
+    setTimeout(()=> {snoreIntervalId = setInterval(generateSnores, 1000)}, 5000);
   } else {
     $("body").css("background-color", "lightblue");
     $("#header").css("color", "navy");
+    clearInterval(snoreIntervalId);
+    snoreCount = 0;
   }
+}
+
+const generateSnores = function() {
+  let snores = "Zz";
+  for (let i = 0; i < snoreCount; i++)
+    snores+="z";
+  $("#header").text(snores + "...");
+  snoreCount = snoreCount == snoreLimit ? 0 : snoreCount+1;
 }
 
 $(".mode-toggle-buttons").click(()=> { 
@@ -111,8 +125,13 @@ $("#aboutButton").click(function() {
   handleToggle($("#bio"), hasBio, "A little about me");
 })
 
-$('footer').mouseenter(()=> {
+$('.footer').mouseenter(()=> {
     //briefDisplay();
+});
+
+$('#header').mouseenter(()=> {
+    if (!isMorning && snoreCount > 3)
+      $("#header").text("**snore**");
 });
     </script>
   </body>

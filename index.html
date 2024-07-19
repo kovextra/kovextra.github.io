@@ -13,12 +13,13 @@
           <h1 id="header"></h1>
           </div>
           <div>
-          <h2 hidden></h2>
+          <h2 id="subHeader" hidden></h2>
           <img src="/images/codingHands_XL.gif" alt="photo here"></img>
           </div>
           <div>    
-            <button class="mode-toggle-buttons" id="peekButton">Sleep</button>
+            <button id="aboutButton">About</button>
             <button id="playlistButton">Playlist</button>
+            <button class="mode-toggle-buttons" id="peekButton">Sleep</button>            
           </div>
         </div>
         <br>
@@ -28,11 +29,15 @@
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
         loading="lazy"></iframe>
       </div>
+      <div id="bio" hidden class="column">
+        <h2 style="color:navy">I'm a software developer, lover of languages (日本語, 中文), guitar-slinging musical artist, animation fan, and overall curious and nerdy guy based in Los Angeles.</h2>
+      </div>
     </row>
     <div class="footer"><p>webpage by <a href="https://www.linkedin.com/in/kovey-coles-8a5a01a6/" target="_blank" rel="noopener noreferrer">kovey coles</p></div>
     <script>
 let isMorning = true;
 let hasPlaylist = false;
+let hasBio = false;
 const morningMessage = 'Hello Friend!';
 const nightMessage = 'Tryna Leave?..';
 
@@ -43,16 +48,22 @@ document.querySelector('#header').innerHTML = morningMessage;
 
 const briefDisplay = function() {
     const message = isMorning ? "Top of the Morning!" : "Brother, Ew";
-    $("h2").text(message);
-     setTimeout(()=> {$("h2").show("slow")}, 250);
-    // $("h2").show("slow");
+    $("#subHeader").text(message);
+     setTimeout(()=> {$("#subHeader").show("slow")}, 250);
     setTimeout(()=>{$("img").show("slow")}, isMorning ? 750 : 0);    
-    setTimeout(()=> {$("h2").hide("slow"); $("img").hide("slow");
+    setTimeout(()=> {$("#subHeader").hide("slow"); $("img").hide("slow");
     }, 3000);
+};
+
+const handleToggle = function(element, bool, headerText) {
+    bool = !bool;
+    element.toggle("slow");
+    $("#header").text(hasPlaylist ? headerText : morningMessage);
 };
 
 const toggleNightMode = function(night) {
   $("#playlistButton").toggle();
+  $("#aboutButton").toggle();
   if (night) {
     $("body").css("background-color", "darkblue");
     $("#header").css("color", "white");
@@ -68,6 +79,7 @@ $(".mode-toggle-buttons").click(()=> {
     let imageSource = isMorning ? "/images/codingHands_XL.gif" : "/images/byeWave_S.gif";
     $("img").attr("src", imageSource);
     $("#header").text(message);
+    $("#bio").hide("slow");
 });
 
 $("#peekButton").on("click", function(){
@@ -81,15 +93,16 @@ $("#peekButton").on("click", function(){
     } else {
       $("#peekButton").html("Sleep");
     }
-    //setTimeout(()=>{$("#header").toggle("slow")}, !isMorning ? 1750 : 0);
     briefDisplay();
     toggleNightMode(!isMorning);
 })
 
 $("#playlistButton").on("click", function(){
-    $("iframe").toggle("slow");
-    hasPlaylist = !hasPlaylist;
-    $("#header").text(hasPlaylist ? "Enjoy some music ♫" : morningMessage);
+  handleToggle($("iframe"), hasPlaylist, "Enjoy some music ♫");
+})
+
+$("#aboutButton").click(function() {
+  handleToggle($("#bio"), hasBio, "A little about me");
 })
 
 $('footer').mouseenter(()=> {

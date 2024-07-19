@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  </head>
+  <body>
+    <row class="row, center">
+      <div class="column">
+        <div>
+          <h1 id="header"></h1>
+          </div>
+          <div>
+          <h2 hidden></h2>
+          <img src="/images/codingHands_XL.gif" alt="photo here"></img>
+          </div>
+          <div>    
+            <button class="mode-toggle-buttons" id="peekButton">Sleep</button>
+            <button id="playlistButton">Playlist</button>
+          </div>
+        </div>
+        <br>
+      <div id="playlist" class="column">
+        <iframe hidden style="border-radius:12px" src="https://open.spotify.com/embed/playlist/5bjZPb0M2d689ZFwEUMcjA?utm_source=generator" 
+        width="100%" height="352" frameBorder="0" allowfullscreen="" 
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+        loading="lazy"></iframe>
+      </div>
+    </row>
+    <div class="footer"><p>webpage by <a href="https://www.instagram.com/koveycoles/" target="_blank" rel="noopener noreferrer">kovey coles</p></div>
+    <script>
+let isMorning = true;
+let hasPlaylist = false;
+const morningMessage = 'Hello Friend!';
+const nightMessage = 'Tryna Leave?..';
+
+setTimeout(()=> {$("h3").hide("slow"); $("img").hide("slow");
+    }, 1000);
+
+document.querySelector('#header').innerHTML = morningMessage;
+
+const briefDisplay = function() {
+    const message = isMorning ? "Top of the Morning!" : "Brother, Ew";
+    $("h2").text(message);
+     setTimeout(()=> {$("h2").show("slow")}, 250);
+    // $("h2").show("slow");
+    setTimeout(()=>{$("img").show("slow")}, isMorning ? 750 : 0);    
+    setTimeout(()=> {$("h2").hide("slow"); $("img").hide("slow");
+    }, 3000);
+};
+
+const toggleNightMode = function(night) {
+  $("#playlistButton").toggle();
+  if (night) {
+    $("body").css("background-color", "darkblue");
+    $("#header").css("color", "white");
+  } else {
+    $("body").css("background-color", "lightblue");
+    $("#header").css("color", "navy");
+  }
+}
+
+$(".mode-toggle-buttons").click(()=> { 
+    isMorning = !isMorning;
+    const message = isMorning ? morningMessage : nightMessage;
+    let imageSource = isMorning ? "/images/codingHands_XL.gif" : "/images/byeWave_S.gif";
+    $("img").attr("src", imageSource);
+    $("#header").text(message);
+});
+
+$("#peekButton").on("click", function(){
+    if (!isMorning) {
+      $("body").css("background-color", "darkblue");
+      $("#peekButton").prop("disabled", true);
+      $("#peekButton").html("Wake Up");
+      setTimeout(()=>{document.querySelector('#header').innerHTML = "Zzzzz..."}, 2500);
+      $("iframe").hide("slow"); 
+      setTimeout(()=>{$("#peekButton").prop("disabled", false)}, 3500);
+    } else {
+      $("#peekButton").html("Sleep");
+    }
+    //setTimeout(()=>{$("#header").toggle("slow")}, !isMorning ? 1750 : 0);
+    briefDisplay();
+    toggleNightMode(!isMorning);
+})
+
+$("#playlistButton").on("click", function(){
+    $("iframe").toggle("slow");
+    hasPlaylist = !hasPlaylist;
+    $("#header").text(hasPlaylist ? "Enjoy some music ♫" : morningMessage);
+})
+
+$('footer').mouseenter(()=> {
+    //briefDisplay();
+});
+    </script>
+  </body>
+</html>

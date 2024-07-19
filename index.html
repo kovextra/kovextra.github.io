@@ -113,6 +113,7 @@ $("#peekButton").on("click", function(){
 
 $("#playlistButton").on("click", function(){
   hasPlaylist = !hasPlaylist;
+  $("iframe").toggleClass("loading-mask");
   handleToggle($("iframe"), hasPlaylist, "Enjoy some music ♫");
 })
 

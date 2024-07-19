@@ -49,16 +49,16 @@ document.querySelector('#header').innerHTML = morningMessage;
 const briefDisplay = function() {
     const message = isMorning ? "Top of the Morning!" : "Brother, Ew";
     $("#subHeader").text(message);
-     setTimeout(()=> {$("#subHeader").show("slow")}, 250);
+    setTimeout(()=> {$("#subHeader").show("slow")}, 250);
     setTimeout(()=>{$("img").show("slow")}, isMorning ? 750 : 0);    
     setTimeout(()=> {$("#subHeader").hide("slow"); $("img").hide("slow");
     }, 3000);
 };
 
 const handleToggle = function(element, bool, headerText) {
-    bool = !bool;
     element.toggle("slow");
-    $("#header").text(hasPlaylist ? headerText : morningMessage);
+    let message = bool ? headerText : morningMessage
+    $("#header").text(message);
 };
 
 const toggleNightMode = function(night) {
@@ -98,10 +98,16 @@ $("#peekButton").on("click", function(){
 })
 
 $("#playlistButton").on("click", function(){
+  hasPlaylist = !hasPlaylist;
   handleToggle($("iframe"), hasPlaylist, "Enjoy some music ♫");
 })
 
 $("#aboutButton").click(function() {
+  hasBio = !hasBio;
+  if (hasBio && !hasPlaylist) {
+    $("img").show("slow");    
+    setTimeout(()=> {$("img").hide("slow")}, 3000);
+  }
   handleToggle($("#bio"), hasBio, "A little about me");
 })
 

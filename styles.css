@@ -48,6 +48,11 @@ iframe {
   margin-top: 1em;
 }
 
+.loading-mask {
+  background: url(./images/Loading2....gif) center center no-repeat;
+  background-size: 200px 200px;
+}
+
 button {
   background-color: navy;
   border: none;

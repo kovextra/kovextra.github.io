@@ -80,11 +80,13 @@ const toggleNightMode = function(night) {
 }
 
 const generateSnores = function() {
-  let snores = "Zz";
-  for (let i = 0; i < snoreCount; i++)
-    snores+="z";
-  $("#header").text(snores + "...");
-  snoreCount = snoreCount == snoreLimit ? 0 : snoreCount+1;
+  if (!isMorning) {
+    let snores = "Zz";
+    for (let i = 0; i < snoreCount; i++)
+      snores+="z";
+    $("#header").text(snores + "...");
+    snoreCount = snoreCount == snoreLimit ? 0 : snoreCount+1;
+  } else clearInterval(snoreIntervalId);
 }
 
 $(".mode-toggle-buttons").click(()=> { 

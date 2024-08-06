@@ -81,3 +81,30 @@ a {
   color: rgb(129, 135, 241);
   text-align: right;
 }
+
+.card {
+  width: 200px;
+  height: 50px;
+  border-radius: 5px;
+  padding: 20px;
+  margin: 5%;
+  box-shadow: 12px 12px 2px 1px rgba(0, 0, 255, 0.2);
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  background-color: rgb(165, 238, 221);
+  color: navy;
+}
+
+.completed-todo {
+  background-color: green;
+  color: white;
+}
+
+.incomplete-todo {
+  background-color: rgb(255, 183, 0);
+  color: red;
+}
+
+.card:hover {
+  box-shadow: 12px 12px 2px 1px rgba(0, 0, 139, 0.5);
+}

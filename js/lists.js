@@ -31,10 +31,10 @@ function renderProducts(productJSON) {
   document.querySelector("#product-list").append(productList);
 
   // To display all products at once, uncomment here
-  // productList.innerHTML = productTitles.join(" ");
+  productList.innerHTML = productTitles.join(" ");
 
   // To display each product gradually
-  teaseProducts(productList, productTitles, 0);
+ // teaseProducts(productList, productTitles, 0);
 }
 
 function teaseProducts(productList, productTitles, i) {

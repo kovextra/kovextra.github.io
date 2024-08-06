@@ -28,7 +28,7 @@ function renderProducts(productJSON) {
       index + 1 + " " + singleProductJSON.title
     }</div>`;
   });
-  document.querySelector("#product-list").append(productList);
+  document.querySelector("#product-column").append(productList);
 
   // To display all products at once, uncomment here
   productList.innerHTML = productTitles.join(" ");
@@ -50,7 +50,7 @@ function teaseTodo_jQuery(list, i) {
   card.html(td.title);
   card.addClass("card");
   card.addClass(td.completed ? "completed-todo" : "incomplete-todo");
-  card.appendTo("#to-do-list");
+  card.appendTo("#to-do-column");
 
   if (td.completed) {
     setTimeout(() => {

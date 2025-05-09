@@ -30,7 +30,7 @@
         loading="lazy"></iframe>
       </div>
       <div id="bio" hidden class="column">
-        <h2 style="color:navy">I'm a software developer, polyglot (日本語, 中文), guitar-slinging musical artist, animation fan, and overall nerdy guy based in Los Angeles.</h2>
+        <h2 style="color:navy;">I'm a software developer, polyglot<br> (日本語, 中文),<br>and guitar-slinging musical artist. <br><br>I enjoy animation, politics, and other nerdy things right here in sunny Los Angeles.</h2>
       </div>
     </row>
     <div class="footer"><p>webpage by <a href="https://www.linkedin.com/in/kovey-coles-8a5a01a6/" target="_blank" rel="noopener noreferrer">kovey coles</p></div>
@@ -50,11 +50,11 @@ setTimeout(()=> {$("h3").hide("slow"); $("img").hide("slow");
 document.querySelector('#header').innerHTML = morningMessage;
 
 const briefDisplay = function() {
-    const message = isMorning ? "Top of the Morning!" : "Brother, Ew";
+    const message = isMorning ? "よろしくお願いします" : "慢走";
     $("#subHeader").text(message);
     setTimeout(()=> {$("#subHeader").show("slow")}, 250);
-    setTimeout(()=>{$("img").show("slow")}, isMorning ? 750 : 0);    
-    setTimeout(()=> {$("#subHeader").hide("slow"); $("img").hide("slow");
+    setTimeout(()=>{$("img").show("slow");  if (!isMorning) $("#peekButton").hide();}, isMorning ? 750 : 0);    
+    setTimeout(()=> {$("#subHeader").hide("slow"); $("img").hide("slow"); $("#peekButton").show();
     }, 3000);
 };
 

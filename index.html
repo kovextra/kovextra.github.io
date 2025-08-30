@@ -21,6 +21,7 @@
         <div>
           <h2 id="subHeader" hidden></h2>
           <img id="peekImage" src="/images/codingHands_XL.gif" alt="photo here"></img>
+          <img id="waveImage" style="left: 150px; position: absolute; display: none; margin:auto; width: 50%; height:100%;" src="/images/bye-wave-trans.png" alt="photo here"></img>
         </div>
         <div>    
             <button id="aboutButton">About</button>
@@ -57,26 +58,34 @@ setTimeout(()=> {$("h3").hide("slow"); $("#peekImage").hide("slow");
 async function moveImagesAcrossScreen() {
 
     let movingImage = document.querySelector("#movingImage");
-    movingImage.style.display = "flex";
     let windowWidth = window.innerWidth;
     let windowHeight = window.innerHeight;
 
-    await moveRight(movingImage);
-    console.log("completed move right")
-    await moveLeft(movingImage);
-    console.log("completed move left")
-    nextMovingImageTimeoutId = setTimeout(moveImagesAcrossScreen, 5000);
+    if (isMorning) {
+      await moveRight(movingImage);
+      console.log("completed move right");
+    }
 
+    if (isMorning) {
+      await moveLeft(movingImage);
+      console.log("completed move left");
+    }
+
+    if (isMorning) {
+      clearTimeout(nextMovingImageTimeoutId); // clear any previously scheduled moving images
+      nextMovingImageTimeoutId = setTimeout(moveImagesAcrossScreen, 5000);
+    }
 
     function moveRight(element) {
       return new Promise((resolve)=> {
-          element.style.display = "flex";
           let pos = -1500;
+          element.style.left = pos+"px";  
           element.style.top = "-400px";
+          element.style.display = "flex";
           let moveID = setInterval(()=>{
             pos+=10; 
             element.style.left = pos+"px";
-            if (pos >= windowWidth*.75) {
+            if (pos >= windowWidth*.75 || !isMorning) {
               console.log("finished right | pos(x): " + pos + " pos(y): " + element.style.top + " ID: " + moveID);
               clearInterval(moveID);
               resolve();
@@ -87,13 +96,14 @@ async function moveImagesAcrossScreen() {
 
     function moveLeft(element) {
       return new Promise((resolve)=> {
-        element.style.display = "flex";
         let pos = windowWidth;
+        element.style.left = pos+"px";
         element.style.top = windowHeight - 700 - (windowHeight*.05) + "px";
+        element.style.display = "flex";
         let moveID = setInterval(()=>{
           pos-=10; 
           element.style.left = pos+"px";
-          if (pos < -1500) {
+          if (pos < -1500 || !isMorning) {
             console.log("finished left| pos(x): " + pos + " pos(y): " + element.style.top + " ID: " + moveID);
             element.style.display = "none";
             clearInterval(moveID);
@@ -106,12 +116,12 @@ async function moveImagesAcrossScreen() {
 
 document.querySelector('#header').innerHTML = morningMessage;
 
-const briefDisplay = function() {
+const briefDisplay = function(imageElement) {
     const message = isMorning ? "よろしくお願いします" : "慢走";
     $("#subHeader").text(message);
     setTimeout(()=> {$("#subHeader").show("slow")}, 250);
-    setTimeout(()=>{$("#peekImage").show("slow");  if (!isMorning) $("#sleepButton").hide();}, isMorning ? 750 : 0);    
-    setTimeout(()=> {$("#subHeader").hide("slow"); $("#peekImage").hide("slow"); $("#sleepButton").show();
+    setTimeout(()=>{imageElement.show("slow");  if (!isMorning) $("#sleepButton").hide();}, isMorning ? 750 : 0);    
+    setTimeout(()=> {$("#subHeader").hide("slow"); imageElement.hide("slow"); $("#sleepButton").show();
     }, 3000);
 };
 
@@ -127,7 +137,7 @@ const toggleNightMode = function(night) {
   if (night) {
     $("#movingImage").hide();
     clearTimeout(nextMovingImageTimeoutId);
-      console.log("snore interval cleared: ", nextMovingImageTimeoutId);
+    console.log("moving image timeout cleared: ", nextMovingImageTimeoutId);
     $("body").css("background-color", "darkblue");
     $("#header").css("color", "white");
     setTimeout(()=> {snoreIntervalId = setInterval(generateSnores, 1000)}, 5000);
@@ -137,7 +147,7 @@ const toggleNightMode = function(night) {
     clearInterval(snoreIntervalId);
     console.log("snore interval cleared: ", snoreIntervalId)
     snoreCount = 0;
-    moveImagesAcrossScreen();
+    nextMovingImageTimeoutId = setTimeout(moveImagesAcrossScreen, 5000);
   }
 }
 
@@ -151,20 +161,8 @@ const generateSnores = function() {
   } else clearInterval(snoreIntervalId);
 }
 
-$(".mode-toggle-buttons").click(()=> { 
-    let image = document.querySelector("#peekImage");
-    isMorning = !isMorning;
-    const message = isMorning ? morningMessage : nightMessage;
-    let imageSource = isMorning ? "/images/codingHands_XL.gif" : "/images/bye-wave-trans.png";
-    $("#peekImage").attr("src", imageSource);
-    
-    sway(image); // comment this out if its broken
-    
-    $("#header").text(message);
-    $("#bio").hide("slow");
-});
-
 async function sway(element) {
+  
     let swayRight = function(limit, pos) {
         return new Promise((resolve)=> {
           pos = pos ? pos : element.getBoundingClientRect().left;
@@ -194,24 +192,33 @@ async function sway(element) {
       });
     }
 
-    let firstposition = await swayRight(40);
+    let initialImageOffset = 110;
+    let firstposition = await swayRight(40, initialImageOffset);
     let secondPosition = await swayLeft(80, firstposition);
     await swayRight(40, secondPosition); 
-    element.style.left = "0px";
+
   }
 
 $("#sleepButton").on("click", function(){
-    if (!isMorning) {
+    isMorning = !isMorning;
+    const message = isMorning ? morningMessage : nightMessage;
+    $("#header").text(message);
+    $("#bio").hide("slow");  
+  
+  if (!isMorning) {
       $("body").css("background-color", "darkblue");
       $("#sleepButton").prop("disabled", true);
       $("#sleepButton").html("Wake Up");
       setTimeout(()=>{document.querySelector('#header').innerHTML = "Zzzzz..."}, 2500);
       $("iframe").hide("slow"); 
       setTimeout(()=>{$("#sleepButton").prop("disabled", false)}, 3500);
+      briefDisplay($("#waveImage"));
+      sway(document.querySelector("#waveImage")); 
     } else {
       $("#sleepButton").html("Sleep");
+      briefDisplay($("#peekImage"));
     }
-    briefDisplay();
+
     toggleNightMode(!isMorning);
 })
 

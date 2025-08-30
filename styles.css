@@ -18,6 +18,16 @@ body {
   text-align: center;
 }
 
+.background-scroll {
+  height: 20%;
+  width: 10%;
+  left: -1500px;
+  top: -300px;
+  position: fixed;
+  display: none;
+  transform: translate(1000px, 500px);
+}
+
 .center {
   margin: 0;
   position: absolute;

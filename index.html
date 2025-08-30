@@ -10,23 +10,25 @@
     <!-- <video autoplay muted loop id="bg-video">
       <source src="https://static.vecteezy.com/system/resources/previews/006/671/832/mp4/traveling-through-star-fields-in-space-to-a-distant-galaxy-free-video.mp4" type="video/mp4">
     </video> -->
+    <div>
+        <img id="movingImage" class="background-scroll" src="/images/codingHands_XL.gif"></img>
+    </div>
     <row class="row, center">
       <div class="column">
         <div>
-          <img id="movingImage" style ="height: 50%; width: 50%; position: absolute; display: none" src="/images/codingHands_XL.gif"></img>
           <h1 id="header"></h1>
-          </div>
-          <div>
+        </div>
+        <div>
           <h2 id="subHeader" hidden></h2>
           <img id="peekImage" src="/images/codingHands_XL.gif" alt="photo here"></img>
-          </div>
-          <div>    
+        </div>
+        <div>    
             <button id="aboutButton">About</button>
             <button id="playlistButton">Playlist</button>
-            <button class="mode-toggle-buttons" id="peekButton">Sleep</button>            
-          </div>
+            <button class="mode-toggle-buttons" id="sleepButton">Sleep</button>            
         </div>
-        <br>
+      </div>
+      <br>
       <div id="playlist" class="column">
         <iframe hidden style="border-radius:12px" src="https://open.spotify.com/embed/playlist/5bjZPb0M2d689ZFwEUMcjA?utm_source=generator" 
         width="100%" height="352" frameBorder="0" allowfullscreen="" 
@@ -47,6 +49,7 @@ const nightMessage = 'Leaving?';
 let snoreIntervalId = 0;
 let snoreCount = 0;
 let snoreLimit = 5;
+let nextMovingImageTimeoutId = 0;
 
 setTimeout(()=> {$("h3").hide("slow"); $("#peekImage").hide("slow");
     moveImagesAcrossScreen()}, 1000);
@@ -55,23 +58,26 @@ async function moveImagesAcrossScreen() {
 
     let movingImage = document.querySelector("#movingImage");
     movingImage.style.display = "flex";
+    let windowWidth = window.innerWidth;
+    let windowHeight = window.innerHeight;
 
     await moveRight(movingImage);
     console.log("completed move right")
     await moveLeft(movingImage);
     console.log("completed move left")
-    setTimeout(moveImagesAcrossScreen, 5000);
+    nextMovingImageTimeoutId = setTimeout(moveImagesAcrossScreen, 5000);
+
 
     function moveRight(element) {
       return new Promise((resolve)=> {
-          //element.style.display = "flex";
+          element.style.display = "flex";
           let pos = -1500;
-          element.style.top = "-300px";
+          element.style.top = "-400px";
           let moveID = setInterval(()=>{
             pos+=10; 
             element.style.left = pos+"px";
-            if (pos >= 1500) {
-              console.log("finished right, ID: " + moveID)
+            if (pos >= windowWidth*.75) {
+              console.log("finished right | pos(x): " + pos + " pos(y): " + element.style.top + " ID: " + moveID);
               clearInterval(moveID);
               resolve();
             }
@@ -81,14 +87,15 @@ async function moveImagesAcrossScreen() {
 
     function moveLeft(element) {
       return new Promise((resolve)=> {
-        //element.style.display = "flex";
-        let pos = 1500;
-        element.style.top = "500px";
+        element.style.display = "flex";
+        let pos = windowWidth;
+        element.style.top = windowHeight - 700 - (windowHeight*.05) + "px";
         let moveID = setInterval(()=>{
           pos-=10; 
           element.style.left = pos+"px";
           if (pos < -1500) {
-            console.log("finished left, ID: " + moveID)
+            console.log("finished left| pos(x): " + pos + " pos(y): " + element.style.top + " ID: " + moveID);
+            element.style.display = "none";
             clearInterval(moveID);
             resolve();
           }
@@ -103,8 +110,8 @@ const briefDisplay = function() {
     const message = isMorning ? "よろしくお願いします" : "慢走";
     $("#subHeader").text(message);
     setTimeout(()=> {$("#subHeader").show("slow")}, 250);
-    setTimeout(()=>{$("#peekImage").show("slow");  if (!isMorning) $("#peekButton").hide();}, isMorning ? 750 : 0);    
-    setTimeout(()=> {$("#subHeader").hide("slow"); $("#peekImage").hide("slow"); $("#peekButton").show();
+    setTimeout(()=>{$("#peekImage").show("slow");  if (!isMorning) $("#sleepButton").hide();}, isMorning ? 750 : 0);    
+    setTimeout(()=> {$("#subHeader").hide("slow"); $("#peekImage").hide("slow"); $("#sleepButton").show();
     }, 3000);
 };
 
@@ -118,6 +125,9 @@ const toggleNightMode = function(night) {
   $("#playlistButton").toggle();
   $("#aboutButton").toggle();
   if (night) {
+    $("#movingImage").hide();
+    clearTimeout(nextMovingImageTimeoutId);
+      console.log("snore interval cleared: ", nextMovingImageTimeoutId);
     $("body").css("background-color", "darkblue");
     $("#header").css("color", "white");
     setTimeout(()=> {snoreIntervalId = setInterval(generateSnores, 1000)}, 5000);
@@ -125,7 +135,9 @@ const toggleNightMode = function(night) {
     $("body").css("background-color", "lightblue");
     $("#header").css("color", "navy");
     clearInterval(snoreIntervalId);
+    console.log("snore interval cleared: ", snoreIntervalId)
     snoreCount = 0;
+    moveImagesAcrossScreen();
   }
 }
 
@@ -184,20 +196,20 @@ async function sway(element) {
 
     let firstposition = await swayRight(40);
     let secondPosition = await swayLeft(80, firstposition);
-    await swayRight(40, secondPosition);
+    await swayRight(40, secondPosition); 
     element.style.left = "0px";
   }
 
-$("#peekButton").on("click", function(){
+$("#sleepButton").on("click", function(){
     if (!isMorning) {
       $("body").css("background-color", "darkblue");
-      $("#peekButton").prop("disabled", true);
-      $("#peekButton").html("Wake Up");
+      $("#sleepButton").prop("disabled", true);
+      $("#sleepButton").html("Wake Up");
       setTimeout(()=>{document.querySelector('#header').innerHTML = "Zzzzz..."}, 2500);
       $("iframe").hide("slow"); 
-      setTimeout(()=>{$("#peekButton").prop("disabled", false)}, 3500);
+      setTimeout(()=>{$("#sleepButton").prop("disabled", false)}, 3500);
     } else {
-      $("#peekButton").html("Sleep");
+      $("#sleepButton").html("Sleep");
     }
     briefDisplay();
     toggleNightMode(!isMorning);

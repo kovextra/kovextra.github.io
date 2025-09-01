@@ -80,7 +80,7 @@
 
             displayNotification("good", `Processing Playlist ID: ${playlistID}`);
                     console.log("4");
-            let outcome = await pullPlaylistFromSpotify();
+            let outcome = await requestPlaylistFromSpotify(playlistID);
 
             receiveSpotifyPlaylistData(outcome);
         }
@@ -88,30 +88,42 @@
 
     $("#list-tracks-button").click(()=>{
         if (trackData.length == 0) 
-            buildTrackTable();
+            buildTrackTable(playlistData);
         $("#track-preview-table").toggle();
     });
 
-    function buildTrackTable() {
+    async function buildTrackTable(initialPlaylistObject) {
         const table = document.querySelector("#track-table");
-        let trackList = playlistData.tracks.items;
-        trackList.forEach((track, index)=> {
-            let row = table.insertRow();
-            let order = row.insertCell();
-            let songName = row.insertCell();
-            let artist = row.insertCell();
-            let length = row.insertCell();
-            let isrc = row.insertCell();
+        let playlistObject = null;
+        
+        do { // load the initial playlist data object or pull the next page of playlist data using the "next" endpoint
+            if (playlistObject == null) 
+                playlistObject= initialPlaylistObject.tracks;
+            else { 
+                let nextPlaylistSection = await requestPlaylistFromSpotify(playlistObject.next.substring(playlistObject.next.indexOf("playlists") + 10));
+                playlistObject = nextPlaylistSection.value;
+            }
+            let trackList = playlistObject.items;
+            let indexOffset = trackData.length; // if there are already tracks loaded, maintain index integrity
 
-           order.innerText = index+1;
-           songName.innerText = track.track.name; // need to check here in case it is an episode object
-           artist.innerText = track.track.artists.reduce((accumulator, artist, index) => {return index == 0 ? artist.name : accumulator + ", " + artist.name;}, "");
-           length.innerText = convertMsToMinutesSeconds(track.track.duration_ms);
-           isrc.innerText = track.track.external_ids.isrc;
+            trackList.forEach((track, index)=> {
+                let row = table.insertRow();
+                let order = row.insertCell();
+                let songName = row.insertCell();
+                let artist = row.insertCell();
+                let length = row.insertCell();
+                let isrc = row.insertCell();
 
-           trackData.push({songName: songName.innerText, artists: artist.innerText, length: length.innerText, isrc: isrc.innerText});
+                order.innerText = index + indexOffset + 1;
+                songName.innerText = track.track.name; // need to check here in case it is an episode object
+                artist.innerText = track.track.artists.reduce((accumulator, artist, index) => {return index == 0 ? artist.name : accumulator + ", " + artist.name;}, "");
+                length.innerText = convertMsToMinutesSeconds(track.track.duration_ms);
+                isrc.innerText = track.track.external_ids.isrc;
 
-        });
+                trackData.push({songName: songName.innerText, artists: artist.innerText, length: length.innerText, isrc: isrc.innerText});
+            });
+        
+    } while (playlistObject.next) // repeat while "next" endpoint is provided in playlist data object
 
     };
 
@@ -124,25 +136,23 @@
         const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
 
         return `${minutes}:${formattedSeconds}`;
-        }
+    }
 
-    function receiveSpotifyPlaylistData(outcome) {
-
+    async function receiveSpotifyPlaylistData(outcome) {
             playlistData = outcome.value;
-            console.log("Playlist Data received " + playlistData);  
-            buildTrackTable();
-            console.log("Track Data received " + trackData);  
+            console.log("Playlist data received");  
+            await buildTrackTable(playlistData);
+            console.log(`Track Data loaded into store. ${trackData.length} tracks total`);  
 
             displayNotification(outcome.type, outcome.message);
 
             $("#playlist-image").attr("src", playlistData.images[0].url);
             $("#playlist-title").text(playlistData.name);
-            $("#playlist-data").text(`Track Count: ${playlistData.tracks.items.length}`);
+            $("#playlist-data").text(`Track Count: ${playlistData.tracks.total}`);
             
             $("#data-input-components").hide();
             $("#playlist-display").show();
             $("#playlist-buttons").show();
-
     }
 
 
@@ -155,7 +165,7 @@
     }
 
     const validateInput = function(formData) {
-        // could add more validation here, using explicit regex for URL characters
+        // TODO: could add more validation here, using explicit regex for URL characters
         console.log("2");
         formData = formData.trimEnd();
         if (formData == defaultURL || /\s/.test(formData) || !formData.includes("spotify.com/playlist")) {
@@ -167,20 +177,17 @@
         return true;
     };
 
-    // this should actually be a GET request since it pulls data
-    const pullPlaylistFromSpotify = async function() {
+    // TODO: this should actually be a GET request since it pulls data
+    const requestPlaylistFromSpotify = async function(requestData) {
+        console.log("Preparing to request to localhost:8081/playlist");
         let response = await fetch("http://localhost:8081/playlist", {
             method : "POST",
             headers : {"Content-Type": "application/json"},
-            body: JSON.stringify({playlist_id : playlistID})
+            body: JSON.stringify({playlist_id : requestData})
         });
         let jsonData = await response.json();
-
-        console.log(`Playlist Name ${jsonData.name}`);
-
-
+        console.log(`Playlist pulled: ${jsonData.name}`);
         return response.status == 200 ? {type : "good", message : `Success! Received Spotify data for playlist - ${jsonData.name}`, value : jsonData} : {type : "bad", message : `Error. Failed to connect to Spotify - ${jsonData.reason}`, value : jsonData}
-
     };
 
     const shakeInput = async function () {

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  </head>
+  <body style="background-color: black">
+    <video autoplay muted loop id="bg-video">
+      <source src="https://static.vecteezy.com/system/resources/previews/006/671/832/mp4/traveling-through-star-fields-in-space-to-a-distant-galaxy-free-video.mp4" type="video/mp4">
+    </video>
+    <row class="center">
+      <column>
+        <div id="data-input-components">
+            <h1 style="color: white">Paste your Spotify playlist link</h1>
+            <input id="link-input" position = "relative" type="text" />
+            <button id="submit-button">Submit</button>
+            <div id="notifications" hidden></div>
+        </div>
+        <div id="playlist-display" hidden>
+            <h1 id="playlist-title"></h1>
+            <h1 id="playlist-data"></h1>
+            <img id="playlist-image"/>
+        </div>
+        <div id="playlist-buttons" hidden>
+            <button id="list-tracks-button" class="playlist-buttons">List Tracks</button>
+            <button id="source-tracks-button" class="playlist-buttons">Source Tracks</button>
+            <div id="track-preview-table" hidden>
+                <table id="track-table">
+                    <tr>
+                        <th>Order</th>
+                        <th>Song Name</th>
+                        <th>Artist</th>
+                        <th>Length</th>
+                        <th>ISRC</th>
+                    </tr>
+                </table>
+            </div>
+        </div>
+      </column>
+    </row>
+        <div class="footer"><p>webpage by <a href="https://www.linkedin.com/in/kovey-coles-8a5a01a6/" target="_blank" rel="noopener noreferrer">kovey coles</p></div>
+  </body>
+  <script>
+    let userInput = "";
+    let playlistID = "";
+    let exampleURL = "https://open.spotify.com/playlist/7aUOYfHoylmCjSJQU0Rh3X?si=93d95f6c12f24d96"
+    let exampleURL2 = "https://open.spotify.com/playlist/70RPLjm8a7hwtP6kxFq1nZ?si=0295941b640e4fc9"
+    let defaultURL = "https://open.spotify.com/playlist/...";
+    let playlistData = null;
+    let trackData = [];
+
+    // establishing default behavior for the link input form
+    
+    $("#link-input").attr("value", defaultURL);
+    
+    $("#link-input").on("focus", ()=> {
+        $("#link-input").attr("value", "");
+    });
+
+    $("#link-input").on("focusout", ()=> {
+        if($("#link-input").val() == "")
+            $("#link-input").attr("value", defaultURL);
+    });
+
+    
+    $("#submit-button").on("click", async function(val) {
+        console.log("1");
+        $("#notifications").hide();
+        let formData = $("input").val();
+        if (validateInput(formData)) {
+            console.log("3");
+            userInput = formData;
+
+            playlistID = userInput.substring(userInput.indexOf("playlist") + 9);
+            let queryIndex = playlistID.indexOf("?");
+            if (queryIndex > 0)
+                playlistID = playlistID.substring(0, queryIndex);
+
+            displayNotification("good", `Processing Playlist ID: ${playlistID}`);
+                    console.log("4");
+            let outcome = await pullPlaylistFromSpotify();
+
+            receiveSpotifyPlaylistData(outcome);
+        }
+    });
+
+    $("#list-tracks-button").click(()=>{
+        if (trackData.length == 0) 
+            buildTrackTable();
+        $("#track-preview-table").toggle();
+    });
+
+    function buildTrackTable() {
+        const table = document.querySelector("#track-table");
+        let trackList = playlistData.tracks.items;
+        trackList.forEach((track, index)=> {
+            let row = table.insertRow();
+            let order = row.insertCell();
+            let songName = row.insertCell();
+            let artist = row.insertCell();
+            let length = row.insertCell();
+            let isrc = row.insertCell();
+
+           order.innerText = index+1;
+           songName.innerText = track.track.name; // need to check here in case it is an episode object
+           artist.innerText = track.track.artists.reduce((accumulator, artist, index) => {return index == 0 ? artist.name : accumulator + ", " + artist.name;}, "");
+           length.innerText = convertMsToMinutesSeconds(track.track.duration_ms);
+           isrc.innerText = track.track.external_ids.isrc;
+
+           trackData.push({songName: songName.innerText, artists: artist.innerText, length: length.innerText, isrc: isrc.innerText});
+
+        });
+
+    };
+
+    function convertMsToMinutesSeconds(ms) {
+        const totalSeconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+
+        // Optional: Add leading zero for single-digit seconds for better formatting
+        const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
+
+        return `${minutes}:${formattedSeconds}`;
+        }
+
+    function receiveSpotifyPlaylistData(outcome) {
+
+            playlistData = outcome.value;
+            console.log("Playlist Data received " + playlistData);  
+            buildTrackTable();
+            console.log("Track Data received " + trackData);  
+
+            displayNotification(outcome.type, outcome.message);
+
+            $("#playlist-image").attr("src", playlistData.images[0].url);
+            $("#playlist-title").text(playlistData.name);
+            $("#playlist-data").text(`Track Count: ${playlistData.tracks.items.length}`);
+            
+            $("#data-input-components").hide();
+            $("#playlist-display").show();
+            $("#playlist-buttons").show();
+
+    }
+
+
+    function displayNotification(type, message) {
+        type == "good" ? $("#notifications").removeClass("notify-bad") : $("#notifications").removeClass("notify-good");
+        $("#notifications").removeClass(`${type == "good" ? "notify-bad" : "notify-good"}`);
+        $("#notifications").addClass(`${type == "good" ? "notify-good" : "notify-bad"}`);
+        $("#notifications").text(message);
+        $("#notifications").show();
+    }
+
+    const validateInput = function(formData) {
+        // could add more validation here, using explicit regex for URL characters
+        console.log("2");
+        formData = formData.trimEnd();
+        if (formData == defaultURL || /\s/.test(formData) || !formData.includes("spotify.com/playlist")) {
+            shakeInput();
+            $("#link-input").attr("value", defaultURL);
+            displayNotification("bad", `Error: \nPlease enter a valid playlist URL. \nCopy the link from the 'Share Playlist' option in Spotify.`);
+            return false;
+        }
+        return true;
+    };
+
+    // this should actually be a GET request since it pulls data
+    const pullPlaylistFromSpotify = async function() {
+        let response = await fetch("http://localhost:8081/playlist", {
+            method : "POST",
+            headers : {"Content-Type": "application/json"},
+            body: JSON.stringify({playlist_id : playlistID})
+        });
+        let jsonData = await response.json();
+
+        console.log(`Playlist Name ${jsonData.name}`);
+
+
+        return response.status == 200 ? {type : "good", message : `Success! Received Spotify data for playlist - ${jsonData.name}`, value : jsonData} : {type : "bad", message : `Error. Failed to connect to Spotify - ${jsonData.reason}`, value : jsonData}
+
+    };
+
+    const shakeInput = async function () {
+        let inputBox = document.querySelector("#link-input");
+        inputBox.style.position = "relative";
+        let positions = [-10, 20, -20, 20, -20, 20];
+        let shakeID = 0;
+        let index = 0;
+
+        let shake = function() {
+            inputBox.style.left = positions[index] + "px";
+            index++;
+            if (index >= positions.length) {
+                clearInterval(shakeID);
+                inputBox.style.left = 0;
+            }
+        }
+        let shakeSpeed = 20;
+        shakeID = setInterval(()=>shake(index), shakeSpeed);
+    } 
+
+
+
+  </script>
+</html>

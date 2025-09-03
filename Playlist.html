@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <title>Spotify Playlist Converter</title>
   </head>
   <body style="background-color: black">
     <video autoplay muted loop id="bg-video">
@@ -26,6 +27,9 @@
         <div id="playlist-buttons" hidden>
             <button id="list-tracks-button" class="playlist-buttons">List Tracks</button>
             <button id="source-tracks-button" class="playlist-buttons">Source Tracks</button>
+            <div id="progress-bar" class="progress-bar-outer" hidden>
+                <div class="progress-bar-inner">0%</div>
+            </div>
             <div id="track-preview-table" hidden>
                 <table id="track-table">
                     <tr>
@@ -48,8 +52,10 @@
     let exampleURL = "https://open.spotify.com/playlist/7aUOYfHoylmCjSJQU0Rh3X?si=93d95f6c12f24d96"
     let exampleURL2 = "https://open.spotify.com/playlist/70RPLjm8a7hwtP6kxFq1nZ?si=0295941b640e4fc9"
     let defaultURL = "https://open.spotify.com/playlist/...";
+    const rootPath = "http://localhost:8081";
     let playlistData = null;
     let trackData = [];
+    let tracksLoaded = 0;
 
     // establishing default behavior for the link input form
     
@@ -63,14 +69,20 @@
         if($("#link-input").val() == "")
             $("#link-input").attr("value", defaultURL);
     });
-
     
+    $("#link-input").keypress((e, val) => {
+        if (e.which == 13) // 13 is the ASCII code for Enter key
+            submitPlaylist(val);
+    });
+
     $("#submit-button").on("click", async function(val) {
-        console.log("1");
+        submitPlaylist(val);
+    });
+
+    async function submitPlaylist(val) {
         $("#notifications").hide();
         let formData = $("input").val();
         if (validateInput(formData)) {
-            console.log("3");
             userInput = formData;
 
             playlistID = userInput.substring(userInput.indexOf("playlist") + 9);
@@ -79,17 +91,42 @@
                 playlistID = playlistID.substring(0, queryIndex);
 
             displayNotification("good", `Processing Playlist ID: ${playlistID}`);
-                    console.log("4");
             let outcome = await requestPlaylistFromSpotify(playlistID);
 
             receiveSpotifyPlaylistData(outcome);
         }
-    });
+    }
 
     $("#list-tracks-button").click(()=>{
         if (trackData.length == 0) 
             buildTrackTable(playlistData);
         $("#track-preview-table").toggle();
+    });
+
+    $("#source-tracks-button").click(async ()=>{
+        displayNotification("good", "Downloading Tracks from Youtube...");
+        try {
+            await requestAllYoutubeConversions();
+            // then call to pull the whole compressed folder
+            let response = await fetch(rootPath+`/zip?name=${playlistData.name}`);
+            let blob = await response.blob();
+
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${playlistData.name}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            displayNotification("good", "Download Completed");
+
+        } catch (error) {
+            displayNotification("bad", "Failed to load tracks from Youtube.");
+            console.error("Failed to source tracks from Youtube: " + error);
+        } finally {
+            setTimeout(()=>$("#notifications").hide(), 4000);
+        }
     });
 
     async function buildTrackTable(initialPlaylistObject) {
@@ -166,7 +203,6 @@
 
     const validateInput = function(formData) {
         // TODO: could add more validation here, using explicit regex for URL characters
-        console.log("2");
         formData = formData.trimEnd();
         if (formData == defaultURL || /\s/.test(formData) || !formData.includes("spotify.com/playlist")) {
             shakeInput();
@@ -180,15 +216,74 @@
     // TODO: this should actually be a GET request since it pulls data
     const requestPlaylistFromSpotify = async function(requestData) {
         console.log("Preparing to request to localhost:8081/playlist");
-        let response = await fetch("http://localhost:8081/playlist", {
+        let response = await fetch(rootPath+"/playlist", {
             method : "POST",
             headers : {"Content-Type": "application/json"},
             body: JSON.stringify({playlist_id : requestData})
         });
         let jsonData = await response.json();
-        console.log(`Playlist pulled: ${jsonData.name}`);
+        console.log(`"${jsonData.name}" playlist received`);
         return response.status == 200 ? {type : "good", message : `Success! Received Spotify data for playlist - ${jsonData.name}`, value : jsonData} : {type : "bad", message : `Error. Failed to connect to Spotify - ${jsonData.reason}`, value : jsonData}
     };
+
+    const requestAllYoutubeConversions = async function() {
+
+        if (trackData.length == 0)
+            return;
+
+        const endpoint = rootPath + "/convert-yt";
+        resetProgressBar();
+        updateProgressDisplay(0);
+
+        // construct an array of Promises (fetch calls)
+        const youtubeLinks = trackData.map((track)=> {
+            return new Promise((resolve, reject)=> { 
+                fetch(`${endpoint}?url=${findYoutubeLink(track)}&name=${track.artists}-${track.songName}`)
+                    .then(()=>{ incrementTrackLoadingProgress(); resolve(); }).catch(reject);
+            });
+        });
+
+        return Promise.all(youtubeLinks);
+    }
+
+    function resetProgressBar() {
+        $(".progress-bar-inner").text("0%");
+        $(".progress-bar-inner").width("0%");
+    }
+
+    function incrementTrackLoadingProgress() {
+        if (tracksLoaded < trackData.length)
+            tracksLoaded++;
+        updateProgressDisplay(((tracksLoaded / trackData.length) * 100).toFixed(2));
+    }
+
+    function updateProgressDisplay(percent) {
+        console.log(`percent: ${percent}%`);
+        $("#progress-bar").show();
+        moveBar();
+
+        function moveBar() {
+            var width = parseFloat($(".progress-bar-inner").text());
+            var intervalId = setInterval(frame, 10);
+            function frame() {
+                if (width >= percent) {
+                clearInterval(intervalId);
+                } else {
+                width++;
+                $(".progress-bar-inner").text(width+"%");
+                $(".progress-bar-inner").width(width+"%");
+                }
+            }
+        }
+        
+        if (percent == 100)  
+            setTimeout(()=>$("#progress-bar").hide(), 1000);
+    }
+
+    // TODO: implement web scraping to find actual hyperlinks
+    const findYoutubeLink = function(track) {
+        return "https://www.youtube.com/watch?v=0WZMIQBM-NI"; // SHAKEN placeholder
+    }
 
     const shakeInput = async function () {
         let inputBox = document.querySelector("#link-input");
@@ -208,6 +303,8 @@
         let shakeSpeed = 20;
         shakeID = setInterval(()=>shake(index), shakeSpeed);
     } 
+
+
 
 
 

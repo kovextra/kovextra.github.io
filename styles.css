@@ -146,6 +146,26 @@ a {
   box-shadow: 12px 12px 2px 1px var(--dark-blue);
 }
 
+.progress-bar-outer {
+  background-color: rgba(245, 245, 220, 0.5);
+  border-radius: 10px;
+  height: 20px;
+  border: 1px var(--baby-blue);
+  width: 100%;
+  position: relative;
+  margin: 10px;
+}
+
+.progress-bar-inner {
+  background-color: var(--baby-blue);
+  border-radius: 10px;
+  height: 20px;
+  width: 0%;
+  font-size: 16px;
+  color: white;
+  text-align: center;
+}
+
 #bg-video {
   position: absolute;
   top: 0;

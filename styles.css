@@ -103,12 +103,38 @@ button:hover {
 }
 
 #submit-button {
-  /* margin-bottom: 200px; */
   margin: 25px;
 }
 
 a {
   color: var(--baby-blue);
+}
+
+.major-title {
+  font-size: 8em;
+  color: white;
+  padding: 0%;
+  margin: 50px;
+  text-align: center;
+  position: relative;
+  transform: translate(0, 30%);
+}
+
+#home-button {
+  min-width: 175px;
+  max-width: 300px;
+}
+
+.nav-bar {
+  position: relative;
+  top: 5;
+  width: 20%;
+  text-align: left;
+  font-size: 20px;
+  color: white;
+  font-weight: bolder;
+  margin-left: 5px;
+  margin-top: 15px;
 }
 
 .footer {
@@ -243,7 +269,6 @@ td {
   width: 80%;
   padding: 10px;
   margin: 40px;
-  position: absolute;
   text-align: center;
   font-size: 18px;
 }
